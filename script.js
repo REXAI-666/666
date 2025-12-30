@@ -97,8 +97,8 @@ DSLR-level detail, ultra HD realism
     outputBox.value = finalPrompt;
 
   } catch (err) {
-    document.getElementById("output").value =
-      "❌ Unexpected error:\n" + err.message;
+  document.getElementById("output").value =
+    "❌ Unexpected error:\n" + err.message;
   }
 }
 
