@@ -11,9 +11,11 @@ async function generatePrompt() {
   const mj = document.getElementById("mj").checked;
   const nano = document.getElementById("nano").checked;
 
+  document.getElementById("output").value = "⏳ Image analyze ho rahi hai...";
+
   const base64 = await toBase64(img);
 
-  const analysis = await fetch(
+  const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: "POST",
@@ -21,15 +23,36 @@ async function generatePrompt() {
       body: JSON.stringify({
         contents: [{
           parts: [
-            { text: "Describe this image in high visual detail for AI image generation." },
-            { inlineData: { mimeType: img.type, data: base64 } }
+            {
+              text:
+`Analyze this image deeply and describe:
+- subject appearance
+- clothing
+- pose
+- environment
+- lighting
+- mood
+Use rich cinematic language for AI image generation.`
+            },
+            {
+              inlineData: {
+                mimeType: img.type,
+                data: base64
+              }
+            }
           ]
         }]
       })
     }
-  ).then(r => r.json());
+  );
 
-  const desc = analysis.candidates?.[0]?.content?.parts?.[0]?.text || "detailed subject";
+  const data = await response.json();
+  let desc =
+    data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+  if (!desc || desc.length < 40) {
+    desc = "a highly detailed human subject with clear facial features, expressive pose, realistic clothing, natural skin texture, and a visually rich environment";
+  }
 
   const cameraMap = {
     eye: "eye-level natural perspective",
@@ -40,43 +63,49 @@ async function generatePrompt() {
     wide: "wide environmental framing"
   };
 
-  let finalPrompt = `
-Ultra-detailed ${style} scene of ${desc},
+  let basePrompt = `
+Ultra-detailed ${style} scene featuring ${desc},
 shot from ${cameraMap[angle]},
-cinematic lighting, realistic textures,
-professional camera look, high dynamic range,
+cinematic lighting, ultra-realistic textures,
+professional camera look, global illumination,
+HDR, sharp focus, depth and realism,
 aspect ratio ${ratio},
 100% locked face reference, no identity change,
 negative prompt: blur, low quality, deformed face, extra fingers
-`;
+`.trim();
+
+  let finalPrompt = basePrompt;
 
   if (mj) {
     finalPrompt += `
+
 ---
 MIDJOURNEY v7:
-${finalPrompt}
+${basePrompt}
 --ar ${ratio} --v 7 --style raw
 `;
   }
 
   if (nano) {
     finalPrompt += `
+
 ---
 NANO BANANA PRO:
-Hyper-realistic mobile camera style,
+Hyper-realistic smartphone camera photo,
 same face as reference (100% locked),
-natural handheld realism, ultra HD
+natural handheld framing, real-world lighting,
+DSLR-level clarity, ultra HD realism
 `;
   }
 
-  document.getElementById("output").value = finalPrompt.trim();
+  document.getElementById("output").value = finalPrompt;
 }
 
 function toBase64(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result.split(",")[1]);
-    r.onerror = rej;
-    r.readAsDataURL(file);
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
