@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     }
 
     const geminiRes = await fetch(
-      ""https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
         apiKey,
       {
         method: "POST",
@@ -42,24 +42,31 @@ export default async function handler(req, res) {
       }
     );
 
-    const rawText = await geminiRes.text();
+    const text = await geminiRes.text();
 
-    // Gemini error handling
     if (!geminiRes.ok) {
       return res.status(500).json({
         error: "Gemini API error",
-        details: rawText
+        details: text
       });
     }
 
-    const data = JSON.parse(rawText);
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return res.status(500).json({
+        error: "Invalid JSON from Gemini",
+        raw: text
+      });
+    }
 
     const description =
       data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!description) {
       return res.status(500).json({
-        error: "No description returned by Gemini",
+        error: "No description returned",
         raw: data
       });
     }
@@ -68,8 +75,8 @@ export default async function handler(req, res) {
 
   } catch (err) {
     return res.status(500).json({
-      error: "Server crash",
-      details: err.message
+      error: "Server exception",
+      details: String(err)
     });
   }
 }
