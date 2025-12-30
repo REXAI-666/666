@@ -4,50 +4,72 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { imageBase64, mimeType } = req.body;
-    if (!imageBase64) {
-      return res.status(400).json({ error: "Image missing" });
+    const { imageBase64, mimeType } = req.body || {};
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "GEMINI_API_KEY missing" });
     }
 
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    if (!imageBase64) {
+      return res.status(400).json({ error: "Image data missing" });
+    }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+    const geminiRes = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" +
+        apiKey,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                text: `
-Analyze the image deeply and describe it for AI image generation.
-Be extremely specific and visual.
-
-Mention subject, face, clothes, pose, background, lighting and mood.
-Write one rich cinematic paragraph.
-`
-              },
-              {
-                inlineData: {
-                  mimeType,
-                  data: imageBase64
+          contents: [
+            {
+              parts: [
+                {
+                  text:
+                    "Describe the image in extreme visual detail for AI image generation."
+                },
+                {
+                  inlineData: {
+                    mimeType,
+                    data: imageBase64
+                  }
                 }
-              }
-            ]
-          }]
+              ]
+            }
+          ]
         })
       }
     );
 
-    const data = await response.json();
-    const description =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "a detailed human subject";
+    const rawText = await geminiRes.text();
 
-    res.status(200).json({ description });
+    // Gemini error handling
+    if (!geminiRes.ok) {
+      return res.status(500).json({
+        error: "Gemini API error",
+        details: rawText
+      });
+    }
+
+    const data = JSON.parse(rawText);
+
+    const description =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!description) {
+      return res.status(500).json({
+        error: "No description returned by Gemini",
+        raw: data
+      });
+    }
+
+    return res.status(200).json({ description });
 
   } catch (err) {
-    res.status(500).json({ error: "Gemini analysis failed" });
+    return res.status(500).json({
+      error: "Server crash",
+      details: err.message
+    });
   }
 }
