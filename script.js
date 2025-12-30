@@ -1,4 +1,3 @@
-// 🔑 PASTE YOUR GEMINI API KEY HERE
 const GEMINI_API_KEY = "AIzaSyBHrb3sK3_he7Q37aLD-xrr_whjqjg92WA";
 
 async function generatePrompt() {
@@ -11,12 +10,12 @@ async function generatePrompt() {
   const mj = document.getElementById("mj").checked;
   const nano = document.getElementById("nano").checked;
 
-  document.getElementById("output").value = "⏳ Image analyze ho rahi hai...";
+  document.getElementById("output").value = "⏳ Image ko deeply analyze kiya ja raha hai...";
 
   const base64 = await toBase64(img);
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -24,15 +23,21 @@ async function generatePrompt() {
         contents: [{
           parts: [
             {
-              text:
-`Analyze this image deeply and describe:
-- subject appearance
-- clothing
-- pose
-- environment
-- lighting
-- mood
-Use rich cinematic language for AI image generation.`
+              text: `
+Analyze the uploaded image STRICTLY and return a detailed visual description.
+Do NOT be generic.
+
+Describe clearly:
+1. Subject gender, age range, facial features, expression
+2. Hair style, hair color
+3. Clothing (type, color, fit, material)
+4. Pose and body language
+5. Background environment
+6. Lighting condition
+7. Mood / vibe
+
+Write as a single rich paragraph suitable for AI image generation.
+`
             },
             {
               inlineData: {
@@ -47,11 +52,11 @@ Use rich cinematic language for AI image generation.`
   );
 
   const data = await response.json();
-  let desc =
-    data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+  let desc = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
-  if (!desc || desc.length < 40) {
-    desc = "a highly detailed human subject with clear facial features, expressive pose, realistic clothing, natural skin texture, and a visually rich environment";
+  if (!desc || desc.length < 80) {
+    desc =
+      "a clearly visible human subject with defined facial structure, realistic skin texture, expressive eyes, natural hairstyle, detailed clothing, confident pose, and a visually rich environment captured in realistic lighting";
   }
 
   const cameraMap = {
@@ -59,16 +64,17 @@ Use rich cinematic language for AI image generation.`
     low: "low-angle dramatic perspective",
     high: "high-angle soft perspective",
     three: "three-quarter cinematic angle",
-    close: "close-up shot with shallow depth of field",
-    wide: "wide environmental framing"
+    close: "close-up portrait with shallow depth of field",
+    wide: "wide environmental framing showing surroundings"
   };
 
-  let basePrompt = `
-Ultra-detailed ${style} scene featuring ${desc},
+  const basePrompt = `
+Ultra-detailed ${style} image of ${desc},
 shot from ${cameraMap[angle]},
-cinematic lighting, ultra-realistic textures,
-professional camera look, global illumination,
-HDR, sharp focus, depth and realism,
+cinematic lighting with natural shadows,
+photorealistic skin and fabric textures,
+professional camera realism, global illumination,
+high dynamic range, depth, clarity,
 aspect ratio ${ratio},
 100% locked face reference, no identity change,
 negative prompt: blur, low quality, deformed face, extra fingers
@@ -91,10 +97,10 @@ ${basePrompt}
 
 ---
 NANO BANANA PRO:
-Hyper-realistic smartphone camera photo,
+Hyper-realistic smartphone photo,
 same face as reference (100% locked),
 natural handheld framing, real-world lighting,
-DSLR-level clarity, ultra HD realism
+DSLR-level detail, ultra HD realism
 `;
   }
 
