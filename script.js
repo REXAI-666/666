@@ -98,7 +98,7 @@ DSLR-level detail, ultra HD realism
 
   } catch (err) {
   document.getElementById("output").value =
-    "❌ Unexpected error:\n" + err.message;
+    "❌ Unexpected error:\n" + String(err);
   }
 }
 
