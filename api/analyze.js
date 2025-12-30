@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${AIzaSyBHrb3sK3_he7Q37aLD-xrr_whjqjg92WA}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
